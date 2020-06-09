@@ -9,8 +9,8 @@ from mongoengine.queryset.visitor import Q
 from .models import WindData
 from .utils import (
     datetime_object_from_url,
-    get_month_range_from_url, change_deg_to_cardinal,
-    change_data_to_range, get_wind_rose, get_time_series,
+    get_month_range_from_url,
+    get_wind_rose, get_time_series,
     get_average_wind_power_density
 )
 
@@ -55,29 +55,29 @@ def get_date_data():
 
     return jsonify(data), 200
 
-@api.route('/month-data', methods=['GET'])
-def get_month_data():
+@api.route('/range-data', methods=['GET'])
+def get_range_data():
     from_time = request.args.get("from")
     to_time = request.args.get("to")
     from_object = datetime_object_from_url(from_time)
     to_object = datetime_object_from_url(to_time)
 
-    raw_month_data = WindData.objects(
+    raw_range_data = WindData.objects(
         Q(timestamp__gte=from_object) & Q(timestamp__lte=to_object)
     ).exclude('id')
 
-    total_month_data = raw_month_data.count()
-    month_lst = (x["speed"] for x in raw_month_data)
-    monthly_mean = round(float(sum(month_lst))/total_month_data, 2)
+    total_range_data = raw_range_data.count()
+    range_lst = (x["speed"] for x in raw_range_data)
+    range_mean = round(float(sum(range_lst))/total_range_data, 2)
 
-    wind_power_density = get_average_wind_power_density(raw_month_data)
+    wind_power_density = get_average_wind_power_density(raw_range_data)
     
-    time_series = get_time_series(raw_month_data)
+    time_series = get_time_series(raw_range_data)
 
-    wind_rose = get_wind_rose(raw_month_data)
+    wind_rose = get_wind_rose(raw_range_data)
 
     data = {
-        'mean': monthly_mean,
+        'mean': range_mean,
         'wind_power_density': wind_power_density,
         'time_series': time_series,
         'wind_rose': wind_rose

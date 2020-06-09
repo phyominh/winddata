@@ -22,7 +22,7 @@ def get_month_range_from_url(url):
     return first, last
 
 
-def change_deg_to_cardinal(data):
+def _change_deg_to_cardinal(data):
     if (data["direction"] > 348.75 and data["direction"] <= 360) or (data["direction"] > 0 and data["direction"] <11.25):
         data["direction"] = "N"
     elif (data["direction"] > 11.25 and data["direction"] < 33.75):
@@ -56,7 +56,7 @@ def change_deg_to_cardinal(data):
     elif (data["direction"] > 326.25 and data["direction"] < 348.75):
         data["direction"] = "NNW"
 
-def change_data_to_range(data, range_lst, unit):
+def _change_data_to_range(data, range_lst, unit):
     for (lower, upper) in range_lst:
         if isinstance(data["speed"], str):
             break
@@ -113,8 +113,8 @@ def get_wind_rose(data):
 
     for i in range(0, len(raw_wind_rose)):
         del raw_wind_rose[i]['timestamp']
-        change_deg_to_cardinal(raw_wind_rose[i])
-        change_data_to_range(raw_wind_rose[i], range_lst, "m/s")
+        _change_deg_to_cardinal(raw_wind_rose[i])
+        _change_data_to_range(raw_wind_rose[i], range_lst, "m/s")
 
     for i in range(0, len(range_lst)):
         if range_lst[i][1] != None:
