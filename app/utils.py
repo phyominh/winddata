@@ -23,47 +23,47 @@ def get_month_range_from_url(url):
 
 
 def _change_deg_to_cardinal(data):
-    if (data["direction"] > 348.75 and data["direction"] <= 360) or (data["direction"] > 0 and data["direction"] <11.25):
-        data["direction"] = "N"
+    if (data["direction"] > 348.75 and data["direction"] <= 360) or (data["direction"] >= 0 and data["direction"] <11.25):
+        return "N"
     elif (data["direction"] > 11.25 and data["direction"] < 33.75):
-        data["direction"] = "NNE"
+        return "NNE"
     elif (data["direction"] > 33.75 and data["direction"] < 56.25):
-        data["direction"] = "NE"
+        return "NE"
     elif (data["direction"] > 56.25 and data["direction"] < 78.75):
-        data["direction"] = "ENE"
+        return "ENE"
     elif (data["direction"] > 78.75 and data["direction"] < 101.25):
-        data["direction"] = "E"
+        return "E"
     elif (data["direction"] > 101.25 and data["direction"] < 123.75):
-        data["direction"] = "ESE"
+        return "ESE"
     elif (data["direction"] > 123.75 and data["direction"] < 146.25):
-        data["direction"] = "SE"
+        return "SE"
     elif (data["direction"] > 146.25 and data["direction"] < 168.75):
-        data["direction"] = "SSE"
+        return "SSE"
     elif (data["direction"] > 168.75 and data["direction"] < 191.25):
-        data["direction"] = "S"
+        return "S"
     elif (data["direction"] > 191.25 and data["direction"] < 213.75):
-        data["direction"] = "SSW"
+        return "SSW"
     elif (data["direction"] > 213.25 and data["direction"] < 236.75):
-        data["direction"] = "SW"
+        return "SW"
     elif (data["direction"] > 236.25 and data["direction"] < 258.75):
-        data["direction"] = "WSW"
+        return "WSW"
     elif (data["direction"] > 258.25 and data["direction"] < 281.75):
-        data["direction"] = "W"
+        return "W"
     elif (data["direction"] > 281.25 and data["direction"] < 303.75):
-        data["direction"] = "WNW"
+        return "WNW"
     elif (data["direction"] > 303.75 and data["direction"] < 326.25):
-        data["direction"] = "NW"
+        return "NW"
     elif (data["direction"] > 326.25 and data["direction"] < 348.75):
-        data["direction"] = "NNW"
+        return "NNW"
 
 def _change_data_to_range(data, range_lst, unit):
     for (lower, upper) in range_lst:
         if isinstance(data["speed"], str):
             break
         if (upper != None) and (data["speed"] >= lower and data["speed"] < upper):
-             data["speed"] = str(lower) + " - " + str(upper) + " " + unit
+            return str(lower) + " - " + str(upper) + " " + unit
         elif upper == None:
-             data["speed"] = "> " + str(lower) + " " + unit
+            return "> " + str(lower) + " " + unit
 
 def get_average_wind_power_density(data):
     # air density at sea level and 15 degree celsius
@@ -93,6 +93,72 @@ def get_time_series(data):
         time_series.append([time, speed])
     return time_series
 
+# def get_wind_rose(data):
+#     raw_wind_rose = json.loads(data.to_json())
+
+#     min_data = min((x["speed"] for x in raw_wind_rose))
+#     max_data = max((x["speed"] for x in raw_wind_rose))
+#     range_data = round((max_data - min_data)/6 , 2)
+
+#     range_lst = []
+#     lower = min_data
+#     for i in range(0, 6):
+#         if i == 5:
+#             range_lst.append((lower, None))
+#         else:
+#             upper = lower + range_data
+#             upper = round(upper, 2)
+#             range_lst.append((lower, upper))
+#             lower = upper
+
+#     for i in range(0, len(raw_wind_rose)):
+#         del raw_wind_rose[i]['timestamp']
+#         _change_deg_to_cardinal(raw_wind_rose[i])
+#         _change_data_to_range(raw_wind_rose[i], range_lst, "m/s")
+
+#     for i in range(0, len(range_lst)):
+#         if range_lst[i][1] != None:
+#             range_lst[i] = str(range_lst[i][0]) + " - " + str(range_lst[i][1]) + " m/s"
+#         else:
+#             range_lst[i] = "> " + str(range_lst[i][0]) + " m/s"
+
+#     wind_rose = []
+#     total = len(raw_wind_rose)
+
+#     for speed in range_lst:
+#         template = {
+#         "name" : "",
+#         "data" : [
+#                 ["N", 0],
+#                 ["NNE", 0],
+#                 ["NE", 0],
+#                 ["ENE", 0],
+#                 ["E", 0],
+#                 ["ESE", 0],
+#                 ["SE", 0],
+#                 ["SSE", 0],
+#                 ["S", 0],
+#                 ["SSW", 0],
+#                 ["SW", 0],
+#                 ["WSW", 0],
+#                 ["W", 0],
+#                 ["WNW", 0],
+#                 ["NW", 0],
+#                 ["NNW", 0]
+#             ]
+#         }
+#         template["name"] = speed
+#         for d in template["data"]:
+#             d[1] = round(
+#                 sum(1 for x in raw_wind_rose
+#                     if (x["direction"] == d[0] and x["speed"] == speed
+#                 )
+#             )/total*100, 2)
+#         wind_rose.append(template)
+#     return wind_rose
+
+
+# This function is for chart.js datasets
 def get_wind_rose(data):
     raw_wind_rose = json.loads(data.to_json())
 
@@ -111,48 +177,21 @@ def get_wind_rose(data):
             range_lst.append((lower, upper))
             lower = upper
 
+    range_str = ["{} - {} m/s".format(x,y) if y is not None else "> {} m/s".format(x) for x,y in range_lst]
+    cardinal_lst = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+    datasets = [[0]*len(cardinal_lst) for _ in range(len(range_str))]
+
     for i in range(0, len(raw_wind_rose)):
-        del raw_wind_rose[i]['timestamp']
-        _change_deg_to_cardinal(raw_wind_rose[i])
-        _change_data_to_range(raw_wind_rose[i], range_lst, "m/s")
+        direction = _change_deg_to_cardinal(raw_wind_rose[i])
+        speed = _change_data_to_range(raw_wind_rose[i], range_lst, "m/s")
+        datasets[range_str.index(speed)][cardinal_lst.index(direction)] += 1
 
-    for i in range(0, len(range_lst)):
-        if range_lst[i][1] != None:
-            range_lst[i] = str(range_lst[i][0]) + " - " + str(range_lst[i][1]) + " m/s"
-        else:
-            range_lst[i] = "> " + str(range_lst[i][0]) + " m/s"
-
-    wind_rose = []
     total = len(raw_wind_rose)
 
-    for speed in range_lst:
-        template = {
-        "name" : "",
-        "data" : [
-                ["N", 0],
-                ["NNE", 0],
-                ["NE", 0],
-                ["ENE", 0],
-                ["E", 0],
-                ["ESE", 0],
-                ["SE", 0],
-                ["SSE", 0],
-                ["S", 0],
-                ["SSW", 0],
-                ["SW", 0],
-                ["WSW", 0],
-                ["W", 0],
-                ["WNW", 0],
-                ["NW", 0],
-                ["NNW", 0]
-            ]
-        }
-        template["name"] = speed
-        for d in template["data"]:
-            d[1] = round(
-                sum(1 for x in raw_wind_rose
-                    if (x["direction"] == d[0] and x["speed"] == speed
-                )
-            )/total*100, 2)
-        wind_rose.append(template)
+    for i in range(0, len(datasets)):
+        for j in range(0, len(datasets[i])):
+            if datasets[i][j] != 0:
+                datasets[i][j] = round(datasets[i][j]/total*100, 2)
+
+    wind_rose = {"datasets": datasets, "labels": range_str}
     return wind_rose
