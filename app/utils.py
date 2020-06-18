@@ -4,6 +4,8 @@ import json
 import pytz
 import urllib
 
+CARDINAL_NAMES = ("N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW")
+
 def datetime_object_from_url(url):
     safe_dt = urllib.parse.unquote(url)
     dt_object = dateutil.parser.parse(safe_dt)
@@ -161,6 +163,7 @@ def get_time_series(data):
 # This function is for chart.js datasets
 def get_wind_rose(data):
     raw_wind_rose = json.loads(data.to_json())
+    total = len(raw_wind_rose)
 
     min_data = min((x["speed"] for x in raw_wind_rose))
     max_data = max((x["speed"] for x in raw_wind_rose))
@@ -178,20 +181,17 @@ def get_wind_rose(data):
             lower = upper
 
     range_str = ["{} - {} m/s".format(x,y) if y is not None else "> {} m/s".format(x) for x,y in range_lst]
-    cardinal_lst = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
-    datasets = [[0]*len(cardinal_lst) for _ in range(len(range_str))]
+    datasets = [[0]*len(CARDINAL_NAMES) for _ in range(len(range_str))]
 
-    for i in range(0, len(raw_wind_rose)):
+    for i in range(0, total):
         direction = _change_deg_to_cardinal(raw_wind_rose[i])
         speed = _change_data_to_range(raw_wind_rose[i], range_lst, "m/s")
-        datasets[range_str.index(speed)][cardinal_lst.index(direction)] += 1
+        datasets[range_str.index(speed)][CARDINAL_NAMES.index(direction)] += 1
 
-    total = len(raw_wind_rose)
-
-    for i in range(0, len(datasets)):
-        for j in range(0, len(datasets[i])):
-            if datasets[i][j] != 0:
-                datasets[i][j] = round(datasets[i][j]/total*100, 2)
+        if i == total - 1:
+            datasets[range_str.index(speed)][CARDINAL_NAMES.index(direction)] = round(
+                datasets[range_str.index(speed)][CARDINAL_NAMES.index(direction)] / total*100,
+                2)
 
     wind_rose = {"datasets": datasets, "labels": range_str}
     return wind_rose
