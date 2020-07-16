@@ -55,6 +55,24 @@ def get_date_data():
 
     return jsonify(data), 200
 
+@api.route('/date-range-data', methods=['GET'])
+def get_date_range_data():
+    req_url = request.args.get("until")
+    dt_object = datetime_object_from_url(req_url)
+    dt_object_start_day = datetime.datetime.combine(dt_object.date(), datetime.datetime.min.time())
+
+    raw_date_data = WindData.objects(
+        Q(timestamp__gte=dt_object_start_day) & Q(timestamp__lt=dt_object)
+    ).exclude('id')
+
+    time_series = get_time_series(raw_date_data)
+
+    data = {
+        'range_data': time_series
+    }
+
+    return jsonify(data), 200
+
 @api.route('/range-data', methods=['GET'])
 def get_range_data():
     from_time = request.args.get("from")
